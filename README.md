@@ -39,10 +39,5 @@ Make sure to adjust the following constants in the script before running:
 
 ## Usage
 
-To execute the script, run the following command in your terminal:
+To execute the script, do your best. We believe in you.
 
-```bash
-python organize_images.py
-```
-
-This will start the organization process, moving images from the source folder to their appropriate categorized folders in the destination directory.

@@ -1,124 +1,186 @@
-from flask import Flask, render_template, request, redirect, send_file, url_for
+"""
+Two-page organiser
+/prompt  – sort by real SD prompts
+/tagger  – tag images with imgutils.get_wd14_tags and sort by those tags
+"""
+import os, json, re, shutil, urllib.parse
+from typing import List
+from flask import Flask, render_template, request, redirect, url_for, send_file
 from PIL import Image
-import json, os, re, shutil, urllib.parse
 
-app = Flask(__name__)
-ALLOWED_EXTENSIONS = {'.png'}   # add '.jpg' if you wish
+# ─────────  WD-tagger via imgutils  ─────────
+try:
+    from imgutils.tagging import get_wd14_tags
+    from imgutils.tagging.wd14 import MODEL_NAMES as tagger_model_names
+except ImportError:
+    def get_wd14_tags(image_path, model_name="SwinV2"):
+        raise RuntimeError("Please install `dghs-imgutils` to enable tagging.")
+    tagger_model_names = {
+        "EVA02_Large": None, "ViT_Large": None, "SwinV2": None,
+        "ConvNext": None, "ConvNextV2": None, "ViT": None,
+        "MOAT": None, "SwinV2_v3": None, "ConvNext_v3": None, "ViT_v3": None,
+    }
+
+MODEL_NAME   = "SwinV2"   # change if you prefer another backbone
+TAG_THRESHOLD = 0.35      # score threshold
+REPLACE_UNDERSCORES = True
+# ────────────────────────────────────────────
 
 
-# ────────────────────────── metadata helper ──────────────────────────────────
-def extract_sd_metadata(path):
-    flat = {}
+app         = Flask(__name__)
+ALLOWED_EXT = {'.png', '.jpg', '.jpeg'}
+
+
+# ───────── helper functions ─────────
+def prompt_from_meta(path: str):
     try:
-        img, meta = Image.open(path), Image.open(path).info
-
-        # Automatic1111 / InvokeAI
+        meta = Image.open(path).info
         if 'parameters' in meta:
-            flat['prompt'] = meta['parameters'].split('\n')[0]
-
-        # Simple 'Prompt' key
-        if 'Prompt' in meta and not flat.get('prompt'):
-            flat['prompt'] = meta['Prompt']
-
-        # JSON chunks (Swarm UI / SUI, A1111 "sd-metadata")
-        for chunk in [v for v in meta.values()
-                      if isinstance(v, str) and v.lstrip().startswith('{')]:
-            try:
-                doc = json.loads(chunk)
-                if 'sui_image_params' in doc:
-                    flat['prompt'] = doc['sui_image_params'].get(
-                        'prompt', flat.get('prompt'))
-                if 'prompt' in doc and not flat.get('prompt'):
-                    flat['prompt'] = doc['prompt']
-            except json.JSONDecodeError:
-                pass
-
-        # include everything else for completeness
-        for k, v in meta.items():
-            if k not in flat:
-                flat[k] = v
-    except Exception as e:
-        print(f"[ERROR] reading {path}: {e}")
-    return flat
+            return meta['parameters'].split('\n')[0]
+        if 'Prompt' in meta:
+            return meta['Prompt']
+        for v in meta.values():
+            if isinstance(v, str) and v.lstrip().startswith('{'):
+                d = json.loads(v)
+                if 'sui_image_params' in d:
+                    return d['sui_image_params'].get('prompt')
+                if 'prompt' in d:
+                    return d['prompt']
+    except Exception:
+        pass
+    return None
 
 
-# ─────────────────────────── routes ──────────────────────────────────────────
+def get_rating_class(rating: dict) -> str:
+    return max(rating, key=rating.get) if rating else ''
+
+
+def tag_image(path: str) -> List[str]:
+    """
+    Returns a flat list of tags (feature+character) above TAG_THRESHOLD.
+    """
+    rating, feats, chars = get_wd14_tags(path, MODEL_NAME)
+    tags = [t for t, s in feats.items() if s > TAG_THRESHOLD]
+    tags += [t for t, s in chars.items() if s > TAG_THRESHOLD]
+    if REPLACE_UNDERSCORES:
+        tags = [t.replace('_', ' ') for t in tags]
+    return tags
+
+
+def safe(name: str) -> str:  # safe folder name
+    return re.sub(r'[\\/:*?"<>|]+', '_', name)[:64] or 'unknown'
+
+
+def image_files(folder):
+    return [f for f in os.listdir(folder)
+            if os.path.splitext(f)[1].lower() in ALLOWED_EXT]
+# ─────────────────────────────────────
+
+
+# ───────── routes ─────────
 @app.route('/', methods=['GET', 'POST'])
-def index():
-    """
-    • GET  /?folder=...  → show thumbnails for that folder
-    • POST (scan form)   → same effect, but from form submission
-    """
-    folder = ''
-    if request.method == 'POST':
-        folder = request.form.get('folder', '').strip()
-    else:  # GET
-        folder = request.args.get('folder', '').strip()
+def home():
+    return render_template('index.html')
 
-    images, error = [], ''
+
+# — PROMPT PAGE —
+@app.route('/prompt', methods=['GET', 'POST'])
+def prompt_page():
+    folder = (request.form.get('folder','') if request.method=='POST'
+              else request.args.get('folder','')).strip()
+    images, err = [], ''
     if folder:
         if not os.path.isdir(folder):
-            error = 'Invalid folder path.'
-            folder = ''
+            err, folder = 'Invalid folder path.', ''
         else:
-            for fname in os.listdir(folder):
-                if os.path.splitext(fname)[1].lower() not in ALLOWED_EXTENSIONS:
-                    continue
-                fpath  = os.path.join(folder, fname)
-                prompt = extract_sd_metadata(fpath).get('prompt',
-                                                        '(no prompt found)')
-                images.append({'filename': fname,
-                               'full_path': fpath,
-                               'prompt': prompt})
-
-    return render_template('index.html',
-                           images=images,
-                           folder=folder,
-                           error=error)
+            for fn in image_files(folder):
+                full = os.path.join(folder, fn)
+                images.append({'filename': fn,
+                               'full_path': full,
+                               'prompt': prompt_from_meta(full) or '(no prompt)'})
+    return render_template('prompt.html', folder=folder, images=images, error=err)
 
 
+@app.route('/prompt/sort', methods=['GET','POST'])
+def prompt_sort():
+    if request.method=='GET':
+        return redirect(url_for('prompt_page'))
+    folder = request.form['folder']
+    keys   = [t.lower() for t in re.split(r'[,\s]+', request.form['tags']) if t]
+    if not keys or not os.path.isdir(folder):
+        return redirect(url_for('prompt_page', folder=folder))
+
+    for fn in image_files(folder):
+        full = os.path.join(folder, fn)
+        p    = (prompt_from_meta(full) or '').lower()
+        for k in keys:
+            if k in p:
+                dst = os.path.join(folder, safe(k))
+                os.makedirs(dst, exist_ok=True)
+                shutil.move(full, os.path.join(dst, fn))
+                break
+    return redirect(url_for('prompt_page', folder=folder))
+
+
+# — TAGGER PAGE —
+@app.route('/tagger', methods=['GET', 'POST'])
+def tagger_page():
+    folder = (request.form.get('folder','') if request.method=='POST'
+              else request.args.get('folder','')).strip()
+    images, err = [], ''
+    if folder:
+        if not os.path.isdir(folder):
+            err, folder = 'Invalid folder path.', ''
+        else:
+            for fn in image_files(folder):
+                full = os.path.join(folder, fn)
+                try:
+                    tag_list = tag_image(full)
+                except Exception as e:
+                    tag_list = [f"[ERROR: {e}]"]
+                images.append({'filename': fn,
+                               'full_path': full,
+                               'tags': tag_list})
+    return render_template('tagger.html', folder=folder, images=images, error=err)
+
+
+@app.route('/tagger/sort', methods=['GET','POST'])
+def tagger_sort():
+    if request.method=='GET':
+        return redirect(url_for('tagger_page'))
+    folder = request.form['folder']
+    keys   = [t.lower() for t in re.split(r'[,\s]+', request.form['tags']) if t]
+    if not keys or not os.path.isdir(folder):
+        return redirect(url_for('tagger_page', folder=folder))
+
+    for fn in image_files(folder):
+        full = os.path.join(folder, fn)
+        try:
+            tag_set = {t.lower() for t in tag_image(full)}
+        except Exception:
+            continue
+        for k in keys:
+            if k in tag_set:
+                dst = os.path.join(folder, safe(k))
+                os.makedirs(dst, exist_ok=True)
+                shutil.move(full, os.path.join(dst, fn))
+                break
+    return redirect(url_for('tagger_page', folder=folder))
+
+
+# — SHARED —
 @app.route('/image')
 def serve_image():
-    """Serve raw image bytes for <img> tags."""
-    fpath = urllib.parse.unquote(request.args.get('path', ''))
-    return send_file(fpath)
+    return send_file(urllib.parse.unquote(request.args.get('path','')))
 
-
-@app.route('/prompt', methods=['POST'])
-def prompt_api():
-    """Return the prompt string for modal display."""
-    fpath  = urllib.parse.unquote(request.form['path'])
-    prompt = extract_sd_metadata(fpath).get('prompt', '(no prompt found)')
-    return prompt, 200, {'Content-Type': 'text/plain; charset=utf-8'}
-
-
-@app.route('/sort', methods=['POST'])
-def sort():
-    folder = request.form['folder']
-    raw    = request.form['tags']
-    tags   = [t.strip().lower() for t in re.split(r'[,\s]+', raw) if t.strip()]
-    if not tags or not os.path.isdir(folder):
-        return redirect(url_for('index', folder=folder))
-
-    for fname in os.listdir(folder):
-        if os.path.splitext(fname)[1].lower() not in ALLOWED_EXTENSIONS:
-            continue
-
-        fpath  = os.path.join(folder, fname)
-        prompt = (extract_sd_metadata(fpath).get('prompt') or '').lower()
-
-        for tag in tags:
-            if tag in prompt:
-                safe = re.sub(r'[\\/:*?"<>|]+', '_', tag)[:64] or 'unknown'
-                dest = os.path.join(folder, safe)
-                os.makedirs(dest, exist_ok=True)
-                shutil.move(fpath, os.path.join(dest, fname))
-                print(f"Moved {fname} → {dest}/")
-                break
-
-    # ⬇️ reload same folder view so user stays in context
-    return redirect(url_for('index', folder=folder))
-
+@app.route('/api/tags', methods=['POST'])
+def api_tags():
+    path = urllib.parse.unquote(request.form['path'])
+    try:
+        tags = tag_image(path)
+        return (", ".join(tags), 200, {'Content-Type':'text/plain; charset=utf-8'})
+    except Exception as e:
+        return (str(e), 500)
 
 if __name__ == '__main__':
     app.run(debug=True)

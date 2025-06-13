@@ -99,11 +99,18 @@ document.getElementById('moveBtn').onclick = e => {
   e.preventDefault();
   const keys = document.getElementById('keys').value.trim();
   if (!keys) return;
-  fetch('{{ url_for("tagger.tagger_sort") }}', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `folder={{ folder | urlencode }}&tags=${keys}`
-  }).then(() => location.reload());
+fetch('{{ url_for("tagger.tagger_sort") }}', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: `folder={{ folder | urlencode }}&tags=${keys}`
+})
+.then(r => r.json())
+.then(res => {
+  res.moved.forEach(p => {
+    const el = document.querySelector(`.card[data-path="${p}"]`);
+    if (el) el.remove();
+  });
+});
 };
 </script>
 

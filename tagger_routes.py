@@ -2,11 +2,16 @@ import os
 import re
 import shutil
 import json
+from flask import jsonify 
 import urllib.parse
 from flask import Blueprint, render_template, request, redirect, url_for, send_file
 from utils import tag_image, image_files, safe
 
 tagger_bp = Blueprint('tagger', __name__, url_prefix='/tagger')
+
+def normalize(text: str) -> str:
+    """Normalize tags and keywords for comparison and folder naming."""
+    return re.sub(r'[(){}\\[\\]]+', '', text.replace('_', ' ').lower()).strip()
 
 @tagger_bp.route('/', methods=['GET', 'POST'])
 def tagger_page():
@@ -28,19 +33,18 @@ def tagger_page():
                                'tags': tag_list})
     return render_template('tagger.html', folder=folder, images=images, error=err)
 
-@tagger_bp.route('/sort', methods=['GET','POST'])
+@tagger_bp.route('/sort', methods=['POST'])
 def tagger_sort():
-    if request.method=='GET':
-        return redirect(url_for('tagger.tagger_page'))
     folder = request.form['folder']
-    keys   = [t.lower() for t in re.split(r'[,\s]+', request.form['tags']) if t]
+    keys   = [normalize(t) for t in re.split(r'[,\s]+', request.form['tags']) if t]
+    moved  = []
     if not keys or not os.path.isdir(folder):
-        return redirect(url_for('tagger.tagger_page', folder=folder))
+        return jsonify({'moved': []})
 
     for fn in image_files(folder):
         full = os.path.join(folder, fn)
         try:
-            tag_set = {t.lower() for t in tag_image(full)}
+            tag_set = {normalize(t) for t in tag_image(full)}
         except Exception:
             continue
         for k in keys:
@@ -48,8 +52,10 @@ def tagger_sort():
                 dst = os.path.join(folder, safe(k))
                 os.makedirs(dst, exist_ok=True)
                 shutil.move(full, os.path.join(dst, fn))
+                moved.append(urllib.parse.quote_plus(full))  # encode path for HTML attribute match
                 break
-    return redirect(url_for('tagger.tagger_page', folder=folder))
+
+    return jsonify({'moved': moved})
 
 @tagger_bp.route('/api/tags', methods=['POST'])
 def api_tags():

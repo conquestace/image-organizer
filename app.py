@@ -8,19 +8,26 @@ app = Flask(__name__)
 app.register_blueprint(prompt_bp)
 app.register_blueprint(tagger_bp)
 
-@app.route('/')
+
+@app.route("/")
 def home():
-    return render_template('index.html')
+    return render_template("index.html")
 
-@app.route('/image')
+
+@app.route("/image")
 def serve_image():
-    return send_file(urllib.parse.unquote(request.args.get('path','')))
+    return send_file(urllib.parse.unquote(request.args.get("path", "")))
 
-@app.route('/api/prompt', methods=['POST'])
+
+@app.route("/api/prompt", methods=["POST"])
 def api_prompt():
-    path = urllib.parse.unquote(request.form['path'])
-    return (prompt_from_meta(path) or '(no prompt)',
-            200, {'Content-Type': 'text/plain; charset=utf-8'})
+    path = urllib.parse.unquote(request.form["path"])
+    return (
+        prompt_from_meta(path) or "(no prompt)",
+        200,
+        {"Content-Type": "text/plain; charset=utf-8"},
+    )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     app.run(debug=True)

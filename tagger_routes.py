@@ -32,11 +32,7 @@ def tagger_page():
         else:
             for fn in image_files(folder):
                 full = os.path.join(folder, fn)
-                try:
-                    tag_list = tag_image(full)
-                except Exception as e:
-                    tag_list = [f"[ERROR: {e}]"]
-                images.append({"filename": fn, "full_path": full, "tags": tag_list})
+                images.append({"filename": fn, "full_path": full})
     return render_template("tagger.html", folder=folder, images=images, error=err)
 
 

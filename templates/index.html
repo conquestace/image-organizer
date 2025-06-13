@@ -1,19 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><title>Image Organiser</title>
-<style>
- body{background:#111;color:#eee;font-family:sans-serif;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
-      height:100vh;margin:0}
- a.btn{display:inline-block;padding:.9rem 1.8rem;margin:.4rem;
-       background:#222;border:1px solid #555;color:#eee;text-decoration:none;border-radius:6px}
- a.btn:hover{background:#333;border-color:#4af;color:#fff}
-</style>
+  <meta charset="UTF-8">
+  <title>Image Organizer</title>
+  <style>
+    body {
+      background: #111;
+      color: #eee;
+      font-family: sans-serif;
+      padding: 3em;
+      text-align: center;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 2em;
+    }
+    a.btn {
+      display: inline-block;
+      padding: 1em 2em;
+      margin: 1em;
+      background: #333;
+      color: #4af;
+      border: 1px solid #555;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    a.btn:hover {
+      background: #444;
+    }
+  </style>
 </head>
 <body>
-<h1>🗂️ Local Image Organiser</h1>
-<a class="btn" href="{{ url_for('prompt_page') }}">Prompt Organiser</a>
-<a class="btn" href="{{ url_for('tagger_page') }}">WD-Tagger Organiser</a>
+  <h1>🧠 Stable Diffusion Image Organizer</h1>
+  <a class="btn" href="{{ url_for('prompt.prompt_page') }}">📄 Prompt Organiser</a>
+  <a class="btn" href="{{ url_for('tagger.tagger_page') }}">🏷️ WD-Tagger Organiser</a>
 </body>
 </html>

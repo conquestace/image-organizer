@@ -1,0 +1,20 @@
+# Bytecode
+*.pyc
+__pycache__/
+
+# VS Code
+.vscode/
+
+# OS junk files
+*.DS_Store
+
+# Image thumbnails
+._*
+
+# Dependency directories
+venv/
+env/
+.env/
+
+# dghs-imgutils related (if installed)
+# If dghs-imgutils creates any local files or directories, add them here.

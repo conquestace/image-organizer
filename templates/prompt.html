@@ -4,38 +4,44 @@
 <meta charset="UTF-8">
 <title>Prompt Organiser</title>
 <style>
- body{background:#111;color:#eee;font-family:sans-serif;padding:2em}
- a{color:#4af}
- input[type=text]{padding:.4em;width:80%;max-width:600px;margin:.3em 0}
- input[type=submit]{padding:.5em 1.2em;margin:.3em 0}
- .grid{display:flex;flex-wrap:wrap;gap:1em;margin-top:1.5em}
- .card{background:#222;padding:1em;border:1px solid #444;width:200px;cursor:pointer}
- .card img{max-width:100%;border:1px solid #333}
- .filename{margin-top:.4em;font-size:.8em;word-break:break-all}
- #modal{display:none;position:fixed;top:10%;left:10%;width:80%;height:80%;
-        background:#000;border:2px solid #888;color:#eee;overflow:auto;padding:1em}
- #modal pre{white-space:pre-wrap;font-size:.9em}
+ body { background: #111; color: #eee; font-family: sans-serif; padding: 2em; }
+ a { color: #4af; }
+ input[type=text] { padding: .4em; width: 80%; max-width: 600px; margin: .3em 0; }
+ input[type=submit] { padding: .5em 1.2em; margin: .3em 0; }
+ .grid { display: flex; flex-wrap: wrap; gap: 1em; margin-top: 1.5em; }
+ .card { background: #222; padding: 1em; border: 1px solid #444; width: 200px; cursor: pointer; }
+ .card img { max-width: 100%; border: 1px solid #333; }
+ .filename { margin-top: .4em; font-size: .8em; word-break: break-word; }
+ #modal { display: none; position: fixed; top: 10%; left: 10%; width: 80%; height: 80%;
+          background: #000; border: 2px solid #888; color: #eee; overflow: auto; padding: 1em; }
+ #modal pre { white-space: pre-wrap; font-size: .9em; }
 </style>
 </head>
 <body>
-<h1>🖼️ Prompt Organiser</h1>
-<p><a href="{{ url_for('tagger_page') }}">Switch to WD-Tagger Organiser</a></p>
 
+<h1>🖼️ Prompt Organiser</h1>
+<p><a href="{{ url_for('tagger.tagger_page') }}">Switch to WD-Tagger Organiser</a></p>
+
+<!-- Folder scan form -->
 <form method="POST">
-  <input type="text" name="folder" placeholder="Full path to image folder"
-         value="{{ folder }}"><br>
+  <input type="text" name="folder" placeholder="Full path to image folder" value="{{ folder }}"><br>
   <input type="submit" value="Scan">
 </form>
 
-{% if error %}<p style="color:#f66">{{ error }}</p>{% endif %}
+{% if error %}
+  <p style="color:#f66">{{ error }}</p>
+{% endif %}
+
 {% if images %}
-<form method="POST" action="{{ url_for('prompt_sort') }}">
+<!-- Sorting by tag form -->
+<form method="POST" action="{{ url_for('prompt.prompt_sort') }}">
   <input type="hidden" name="folder" value="{{ folder }}">
   <label>Move images whose <strong>prompt</strong> contains:</label><br>
   <input type="text" name="tags" placeholder="e.g. cirno, dragon"><br>
   <input type="submit" value="Sort Images">
 </form>
 
+<!-- Thumbnails -->
 <div class="grid">
   {% for img in images %}
     <div class="card" onclick="showPrompt('{{ img.full_path | urlencode }}')">
@@ -47,6 +53,7 @@
 </div>
 {% endif %}
 
+<!-- Modal -->
 <div id="modal">
   <button onclick="document.getElementById('modal').style.display='none'">close ✖</button>
   <h3>Prompt:</h3>
@@ -55,15 +62,16 @@
 
 <script>
 function showPrompt(encPath){
-  fetch('{{ url_for("api_prompt") }}',{
-    method:'POST',
-    headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body:'path='+encPath
-  }).then(r=>r.text()).then(t=>{
-    document.getElementById('prompttext').innerText=t;
-    document.getElementById('modal').style.display='block';
+  fetch('{{ url_for("api_prompt") }}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'path=' + encPath
+  }).then(r => r.text()).then(t => {
+    document.getElementById('prompttext').innerText = t;
+    document.getElementById('modal').style.display = 'block';
   });
 }
 </script>
+
 </body>
 </html>

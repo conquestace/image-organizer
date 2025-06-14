@@ -36,6 +36,12 @@
 {% if error %}<p style="color:#f66">{{ error }}</p>{% endif %}
 
 {% if images %}
+
+<div style="margin-top:1rem">
+  <button id="sortBtn">Sort by rating</button>
+</div>
+
+
 <div id="barWrap"><div id="bar"></div></div>
 <div id="eta"></div>
 
@@ -66,12 +72,14 @@ function loadRating(card){
     body: `path=${path}`
   })
   .then(r => r.text())
+
   .then(txt => {
     box.textContent = txt;
     box.classList.add('visible');
     setTimeout(() => card.remove(), 300);
     tick();
   })
+
   .catch(()=>{ box.textContent = '[error]'; tick(); });
 }
 
@@ -91,6 +99,24 @@ if(total>0){
   document.getElementById('barWrap').style.display='block';
   cards.forEach(loadRating);
 }
+
+
+document.getElementById('sortBtn')?.addEventListener('click', e => {
+  e.preventDefault();
+  fetch('{{ url_for("rating.rating_sort") }}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `folder={{ folder | urlencode }}`
+  })
+  .then(r => r.json())
+  .then(res => {
+    res.moved.forEach(p => {
+      const el = document.querySelector(`.card[data-path="${p}"]`);
+      if(el) el.remove();
+    });
+  });
+});
+
 </script>
 
 </body>

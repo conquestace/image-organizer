@@ -8,6 +8,7 @@ from utils import rating_of_image, image_files, safe
 rating_bp = Blueprint("rating", __name__, url_prefix="/rating")
 
 
+
 @rating_bp.route('/', methods=['GET', 'POST'])
 def rating_page():
     folder = (
@@ -23,6 +24,8 @@ def rating_page():
                 full = os.path.join(folder, fn)
                 images.append({'filename': fn, 'full_path': full})
     return render_template('rating.html', folder=folder, images=images, error=err, show_images=show)
+
+
 
 
 @rating_bp.route('/api/rating', methods=['POST'])
@@ -42,6 +45,7 @@ def api_rating():
                 i += 1
             dest = os.path.join(dst_dir, f"{base}_{i}{ext}")
         shutil.move(path, dest)
+
         return (cls, 200, {'Content-Type': 'text/plain; charset=utf-8'})
     except Exception as e:
         return (str(e), 500)

@@ -63,27 +63,36 @@ const total = cards.length;
 let done = 0, start = Date.now();
 let tagCache = {};
 
+function loadTags(card) {
+  const path = card.dataset.path;
+  const box = card.querySelector('.tags');
+  if (tagCache[path]) {
+    box.textContent = tagCache[path].join(', ');
+    box.classList.add('visible');
+    tick();
+    return;
+  }
+  fetch('{{ url_for("tagger.api_tags") }}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `path=${path}`
+  })
+  .then(r => r.text())
+  .then(tags => {
+    tagCache[path] = tags.split(', ');
+    box.textContent = tags;
+    box.classList.add('visible');
+    tick();
+  })
+  .catch(() => {
+    box.textContent = '[error]';
+    tick();
+  });
+}
+
 if (total > 0) {
   document.getElementById('barWrap').style.display = 'block';
-  cards.forEach(card => {
-    const path = card.dataset.path;
-    fetch('{{ url_for("tagger.api_tags") }}', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `path=${path}`
-    })
-    .then(r => r.text()).then(tags => {
-      tagCache[path] = tags.split(', ');
-      const tbox = card.querySelector('.tags');
-      tbox.textContent = tags;
-      tbox.classList.add('visible');
-      tick();
-    })
-    .catch(() => {
-      card.querySelector('.tags').textContent = '[error]';
-      tick();
-    });
-  });
+  cards.forEach(loadTags);
 }
 
 function tick() {

@@ -71,3 +71,17 @@ def prompt_from_meta(path: str):
     except Exception:
         pass
     return None
+
+@lru_cache(maxsize=512)
+def _cached_rating(path: str, mtime: float) -> str:
+    rating, _, _ = get_wd14_tags(path, MODEL_NAME)
+    return max(rating, key=rating.get)
+
+
+def rating_of_image(path: str) -> str:
+    """Return rating class for *path*, caching results by modification time."""
+    try:
+        mtime = os.path.getmtime(path)
+    except OSError:
+        mtime = 0
+    return _cached_rating(path, mtime)

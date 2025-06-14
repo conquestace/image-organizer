@@ -27,6 +27,7 @@
 
 <form method="POST">
   <input type="text" name="folder" placeholder="Full path to image folder" value="{{ folder }}"><br>
+  <label><input type="checkbox" name="show" value="1" {% if show_images %}checked{% endif %}> Show images</label><br>
   <input type="submit" value="Scan">
 </form>
 
@@ -46,7 +47,9 @@
 <div class="grid" id="grid">
   {% for img in images %}
     <div class="card" data-path="{{ img.full_path | urlencode }}">
+      {% if show_images %}
       <img src="{{ url_for('serve_image') }}?path={{ img.full_path | urlencode }}" alt="{{ img.filename }}">
+      {% endif %}
       <div class="tags">loading…</div>
       <div class="filename">{{ img.filename }}</div>
     </div>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Rating Organiser</title>
+<style>
+  body { background: #111; color: #eee; font-family: sans-serif; padding: 2em; }
+  a { color: #4af; }
+  input[type=text] { padding: .4em; width: 80%; max-width: 600px; margin: .3em 0; }
+  button, input[type=submit] { padding: .5em 1.2em; margin: .3em 0; }
+  .grid { display: flex; flex-wrap: wrap; gap: 1em; margin-top: 1.5em; }
+  .card { background: #222; padding: 1em; border: 1px solid #444; width: 200px; cursor: pointer; }
+  .card img { max-width: 100%; border: 1px solid #333; }
+  .rating { font-size: .8em; color: #ccc; margin-top: .4em; opacity: 0; transition: opacity .4s; }
+  .rating.visible { opacity: 1; }
+  .filename { margin-top: .4em; font-size: .8em; word-break: break-word; }
+  #barWrap { display: none; margin-top: 1rem; width: 100%; max-width: 600px; height: 10px; background: #333; border-radius: 5px; overflow: hidden; }
+  #bar { height: 100%; width: 0%; background: #4af; }
+  #eta { font-size: .8em; color: #aaa; margin-top: .3em; }
+</style>
+</head>
+<body>
+
+<h1>🔞 Rating Organiser</h1>
+<p>
+  <a href="{{ url_for('prompt.prompt_page') }}">Switch to Prompt Organiser</a> |
+  <a href="{{ url_for('tagger.tagger_page') }}">Switch to WD-Tagger Organiser</a>
+</p>
+
+<form method="POST">
+  <input type="text" name="folder" placeholder="Full path to image folder" value="{{ folder }}"><br>
+  <label><input type="checkbox" name="show" value="1" {% if show_images %}checked{% endif %}> Show images</label><br>
+  <input type="submit" value="Scan">
+</form>
+
+{% if error %}<p style="color:#f66">{{ error }}</p>{% endif %}
+
+{% if images %}
+<div style="margin-top:1rem">
+  <button id="sortBtn">Sort by rating</button>
+</div>
+
+<div id="barWrap"><div id="bar"></div></div>
+<div id="eta"></div>
+
+<div class="grid" id="grid">
+  {% for img in images %}
+    <div class="card" data-path="{{ img.full_path | urlencode }}">
+      {% if show_images %}
+      <img src="{{ url_for('serve_image') }}?path={{ img.full_path | urlencode }}" alt="{{ img.filename }}">
+      {% endif %}
+      <div class="rating">loading…</div>
+      <div class="filename">{{ img.filename }}</div>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<script>
+const cards = [...document.querySelectorAll('.card')];
+const total = cards.length;
+let done = 0, start = Date.now();
+
+function loadRating(card){
+  const path = card.dataset.path;
+  const box = card.querySelector('.rating');
+  fetch('{{ url_for("rating.api_rating") }}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `path=${path}`
+  })
+  .then(r => r.text())
+  .then(txt => { box.textContent = txt; box.classList.add('visible'); tick(); })
+  .catch(()=>{ box.textContent = '[error]'; tick(); });
+}
+
+function tick(){
+  done++;
+  const percent = done/total*100;
+  document.getElementById('bar').style.width = percent + '%';
+  if(done===total){
+    document.getElementById('eta').textContent = 'Rating complete.';
+  }else{
+    const eta = ((Date.now()-start)/1000/done*(total-done)).toFixed(1);
+    document.getElementById('eta').textContent = `Processed ${done}/${total} — ETA ${eta}s`;
+  }
+}
+
+if(total>0){
+  document.getElementById('barWrap').style.display='block';
+  cards.forEach(loadRating);
+}
+
+document.getElementById('sortBtn')?.addEventListener('click', e => {
+  e.preventDefault();
+  fetch('{{ url_for("rating.rating_sort") }}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `folder={{ folder | urlencode }}`
+  })
+  .then(r => r.json())
+  .then(res => {
+    res.moved.forEach(p => {
+      const el = document.querySelector(`.card[data-path="${p}"]`);
+      if(el) el.remove();
+    });
+  });
+});
+</script>
+
+</body>
+</html>

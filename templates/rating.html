@@ -36,6 +36,7 @@
 {% if error %}<p style="color:#f66">{{ error }}</p>{% endif %}
 
 {% if images %}
+
 <div id="barWrap"><div id="bar"></div></div>
 <div id="eta"></div>
 
@@ -72,6 +73,7 @@ function loadRating(card){
     setTimeout(() => card.remove(), 300);
     tick();
   })
+
   .catch(()=>{ box.textContent = '[error]'; tick(); });
 }
 
@@ -91,6 +93,7 @@ if(total>0){
   document.getElementById('barWrap').style.display='block';
   cards.forEach(loadRating);
 }
+
 </script>
 
 </body>

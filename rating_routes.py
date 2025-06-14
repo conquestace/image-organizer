@@ -49,8 +49,13 @@ def rating_sort():
 @rating_bp.route('/api/rating', methods=['POST'])
 def api_rating():
     path = urllib.parse.unquote(request.form['path'])
+    move = request.form.get('move')
     try:
         cls = rating_of_image(path)
+        if move:
+            dst = os.path.join(os.path.dirname(path), safe(cls))
+            os.makedirs(dst, exist_ok=True)
+            shutil.move(path, os.path.join(dst, os.path.basename(path)))
         return (cls, 200, {'Content-Type': 'text/plain; charset=utf-8'})
     except Exception as e:
         return (str(e), 500)

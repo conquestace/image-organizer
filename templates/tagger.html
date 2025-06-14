@@ -11,6 +11,7 @@
   .grid { display: flex; flex-wrap: wrap; gap: 1em; margin-top: 1.5em; }
   .card { background: #222; padding: 1em; border: 1px solid #444; width: 200px; cursor: pointer; }
   .card img { max-width: 100%; border: 1px solid #333; }
+  .placeholder { height: 200px; display:flex; align-items:center; justify-content:center; background:#333; color:#777; }
   .tags { font-size: .8em; color: #ccc; margin-top: .4em; opacity: 0; transition: opacity .4s; }
   .tags.visible { opacity: 1; }
   .filename { margin-top: .4em; font-size: .8em; word-break: break-word; }
@@ -27,6 +28,7 @@
 
 <form method="POST">
   <input type="text" name="folder" placeholder="Full path to image folder" value="{{ folder }}"><br>
+  <label><input type="checkbox" name="show_images" value="1" {% if show_images %}checked{% endif %}> Show images</label><br>
   <input type="submit" value="Scan">
 </form>
 
@@ -45,8 +47,12 @@
 <!-- Image Grid -->
 <div class="grid" id="grid">
   {% for img in images %}
-    <div class="card" data-path="{{ img.full_path | urlencode }}">
+    <div class="card" data-path="{{ img.full_path | urlencode }}" data-src="{{ url_for('serve_image') }}?path={{ img.full_path | urlencode }}">
+      {% if show_images %}
       <img src="{{ url_for('serve_image') }}?path={{ img.full_path | urlencode }}" alt="{{ img.filename }}">
+      {% else %}
+      <div class="placeholder">Show image</div>
+      {% endif %}
       <div class="tags">loading…</div>
       <div class="filename">{{ img.filename }}</div>
     </div>
@@ -64,6 +70,16 @@ if (total > 0) {
   document.getElementById('barWrap').style.display = 'block';
   cards.forEach(card => {
     const path = card.dataset.path;
+    const ph = card.querySelector('.placeholder');
+    if (ph) {
+      card.addEventListener('click', () => {
+        const img = document.createElement('img');
+        img.src = card.dataset.src;
+        img.alt = card.dataset.path.split('/').pop();
+        card.insertBefore(img, ph);
+        ph.remove();
+      }, { once: true });
+    }
     fetch('{{ url_for("tagger.api_tags") }}', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

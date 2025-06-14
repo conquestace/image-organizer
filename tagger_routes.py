@@ -25,6 +25,10 @@ def tagger_page():
         if request.method == "POST"
         else request.args.get("folder", "")
     ).strip()
+    show_images = (
+        request.form.get("show_images", "1") if request.method == "POST" else request.args.get("show_images", "1")
+    )
+    show_images = show_images == "1"
     images, err = [], ""
     if folder:
         if not os.path.isdir(folder):
@@ -32,12 +36,8 @@ def tagger_page():
         else:
             for fn in image_files(folder):
                 full = os.path.join(folder, fn)
-                try:
-                    tag_list = tag_image(full)
-                except Exception as e:
-                    tag_list = [f"[ERROR: {e}]"]
-                images.append({"filename": fn, "full_path": full, "tags": tag_list})
-    return render_template("tagger.html", folder=folder, images=images, error=err)
+                images.append({"filename": fn, "full_path": full})
+    return render_template("tagger.html", folder=folder, images=images, error=err, show_images=show_images)
 
 
 @tagger_bp.route("/sort", methods=["POST"])

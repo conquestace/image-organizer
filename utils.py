@@ -2,6 +2,7 @@ import os
 import re
 import json
 from typing import Iterable, List
+from functools import lru_cache
 from PIL import Image
 
 ALLOWED_EXT = {".png", ".jpg", ".jpeg"}
@@ -32,13 +33,23 @@ def image_files(folder: str) -> Iterable[str]:
             yield entry.name
 
 
-def tag_image(path: str) -> List[str]:
+@lru_cache(maxsize=512)
+def _cached_tags(path: str, mtime: float) -> List[str]:
     rating, feats, chars = get_wd14_tags(path, MODEL_NAME)
     tags = [t for t, s in feats.items() if s > TAG_THRESHOLD]
     tags += [t for t, s in chars.items() if s > TAG_THRESHOLD]
     if REPLACE_UNDERSCORES:
         tags = [t.replace("_", " ") for t in tags]
     return tags
+
+
+def tag_image(path: str) -> List[str]:
+    """Return tags for *path*, caching results by modification time."""
+    try:
+        mtime = os.path.getmtime(path)
+    except OSError:
+        mtime = 0
+    return _cached_tags(path, mtime)
 
 
 def prompt_from_meta(path: str):

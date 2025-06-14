@@ -40,6 +40,7 @@ def tagger_page():
     return render_template("tagger.html", folder=folder, images=images, error=err, show_images=show_images)
 
 
+
 @tagger_bp.route("/sort", methods=["POST"])
 def tagger_sort():
     folder = request.form["folder"]

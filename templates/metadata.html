@@ -8,6 +8,9 @@
   a { color: #4af; }
   input[type=text] { padding: .4em; width: 80%; max-width: 600px; margin: .3em 0; }
   input[type=submit] { padding: .5em 1.2em; margin: .3em 0; }
+  #barWrap { display:none; margin-top:1rem; width:100%; max-width:600px; height:10px; background:#333; border-radius:5px; overflow:hidden; }
+  #bar { height:100%; width:0%; background:#4af; }
+  #eta { font-size:.8em; color:#aaa; margin-top:.3em; }
 </style>
 </head>
 <body>
@@ -25,7 +28,49 @@
   <input type="submit" value="Extract">
 </form>
 
+<div id="barWrap"><div id="bar"></div></div>
+<div id="eta"></div>
+
 {% if message %}<p>{{ message }}</p>{% endif %}
 
+<script>
+document.querySelector('form').onsubmit = async e => {
+  e.preventDefault();
+  const folder = e.target.folder.value.trim();
+  const out = e.target.out.value.trim();
+  if(!folder || !out) return;
+
+  const listRes = await fetch('{{ url_for("metadata.api_list") }}', {
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:`folder=${encodeURIComponent(folder)}`
+  });
+  const data = await listRes.json();
+  const paths = data.paths;
+  const total = paths.length;
+  if(total === 0){
+    document.getElementById('eta').textContent = 'No images found.';
+    return;
+  }
+  document.getElementById('barWrap').style.display = 'block';
+  let done = 0, start = Date.now();
+  for(const p of paths){
+    await fetch('{{ url_for("metadata.api_extract") }}', {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:`path=${encodeURIComponent(p)}&out=${encodeURIComponent(out)}`
+    });
+    done++;
+    const percent = done/total*100;
+    document.getElementById('bar').style.width = percent + '%';
+    if(done===total){
+      document.getElementById('eta').textContent = 'Metadata extraction complete.';
+    }else{
+      const eta = ((Date.now()-start)/1000/done*(total-done)).toFixed(1);
+      document.getElementById('eta').textContent = `Processed ${done}/${total} — ETA ${eta}s`;
+    }
+  }
+};
+</script>
 </body>
 </html>

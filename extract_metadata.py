@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Extract metadata from PNG images and organize by rating."""
+"""Extract metadata from PNG images and organize by rating.
+
+Only ``.png`` files are processed; other formats are skipped.
+"""
 
 import argparse
 import json

@@ -20,7 +20,7 @@ The image organization script scans a specified source folder for images and mov
 ### extract_metadata.py
 
 - **Functionality**:
-  - Recursively scans a folder for PNG files.
+  - Recursively scans a folder for PNG files (other formats are ignored).
   - Extracts all available metadata from each image.
   - Saves the metadata to JSON files under a destination directory organised by rating (`general`, `sensitive`, `questionable`, `explicit`).
 - **Usage**:

@@ -25,9 +25,17 @@ def metadata_page():
         elif not out:
             message = "Please specify output folder."
         else:
-            try:
-                extract_metadata.process(folder, out)
-                message = "Metadata extraction complete."
-            except Exception as e:
-                message = str(e)
+            pngs = [
+                f
+                for f in os.listdir(folder)
+                if os.path.splitext(f)[1].lower() == ".png"
+            ]
+            if not pngs:
+                message = "No PNG files found in source folder."
+            else:
+                try:
+                    extract_metadata.process(folder, out)
+                    message = "Metadata extraction complete."
+                except Exception as e:
+                    message = str(e)
     return render_template("metadata.html", folder=folder, out=out, message=message)

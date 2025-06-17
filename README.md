@@ -30,7 +30,8 @@ The image organization script scans a specified source folder for images and mov
 
 - Use the `/metadata/` page in the web interface to run the extraction
   without the command line. Provide a source folder and destination directory,
-  then click **Extract** to save JSON files grouped by rating.
+  then click **Extract** to save JSON files grouped by rating. The page
+  displays a progress bar as each file is processed.
 
 ### Batch WD-Tagger Page
 

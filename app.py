@@ -4,6 +4,7 @@ from prompt_routes import prompt_bp
 from tagger_routes import tagger_bp
 from rating_routes import rating_bp
 from metadata_routes import metadata_bp
+from dir_tagger_routes import batch_bp
 from utils import prompt_from_meta
 
 app = Flask(__name__)
@@ -11,6 +12,7 @@ app.register_blueprint(prompt_bp)
 app.register_blueprint(tagger_bp)
 app.register_blueprint(rating_bp)
 app.register_blueprint(metadata_bp)
+app.register_blueprint(batch_bp)
 
 
 @app.route("/")

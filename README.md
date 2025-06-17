@@ -32,6 +32,13 @@ The image organization script scans a specified source folder for images and mov
   without the command line. Provide a source folder and destination directory,
   then click **Extract** to save JSON files grouped by rating.
 
+### Batch WD-Tagger Page
+
+- The `/batch/` page tags all images under a folder (including subfolders) using
+  the WD-14 tagger.
+- Tags are saved as `.txt` files next to each image and a `tags.json` file is
+  created in the chosen output directory.
+
 ### Metadata Extraction
 
 - The script is capable of extracting the "prompts" metadata field from image files using the `exifread` library. This metadata can then be used to categorize images if no specific keyword match occurs.

@@ -33,6 +33,16 @@ def image_files(folder: str) -> Iterable[str]:
             yield entry.name
 
 
+def walk_images(folder: str, ignore: Iterable[str] = ()) -> Iterable[str]:
+    """Yield image file paths under *folder* recursively, skipping *ignore* dirs."""
+    skip = {d.lower() for d in ignore}
+    for root, dirs, files in os.walk(folder):
+        dirs[:] = [d for d in dirs if d.lower() not in skip]
+        for fn in files:
+            if os.path.splitext(fn)[1].lower() in ALLOWED_EXT:
+                yield os.path.join(root, fn)
+
+
 @lru_cache(maxsize=512)
 def _cached_tags(path: str, mtime: float) -> List[str]:
     rating, feats, chars = get_wd14_tags(path, MODEL_NAME)

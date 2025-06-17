@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Metadata Extractor</title>
+<style>
+  body { background: #111; color: #eee; font-family: sans-serif; padding: 2em; }
+  a { color: #4af; }
+  input[type=text] { padding: .4em; width: 80%; max-width: 600px; margin: .3em 0; }
+  input[type=submit] { padding: .5em 1.2em; margin: .3em 0; }
+</style>
+</head>
+<body>
+
+<h1>📥 Metadata Extractor</h1>
+<p>
+  <a href="{{ url_for('prompt.prompt_page') }}">Switch to Prompt Organiser</a> |
+  <a href="{{ url_for('tagger.tagger_page') }}">Switch to WD-Tagger Organiser</a> |
+  <a href="{{ url_for('rating.rating_page') }}">Switch to Rating Organiser</a>
+</p>
+
+<form method="POST">
+  <input type="text" name="folder" placeholder="Image folder" value="{{ folder }}"><br>
+  <input type="text" name="out" placeholder="Destination folder" value="{{ out }}"><br>
+  <input type="submit" value="Extract">
+</form>
+
+{% if message %}<p>{{ message }}</p>{% endif %}
+
+</body>
+</html>

@@ -36,4 +36,9 @@ def api_prompt():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    import argparse
+    parser = argparse.ArgumentParser(description="Run the Flask app.")
+    parser.add_argument("--port", type=int, default=5000, help="port to run")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="host to expose")
+    args = parser.parse_args()
+    app.run(debug=True, host=args.host, port=args.port)

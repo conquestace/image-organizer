@@ -6,6 +6,8 @@ import json
 import os
 from typing import Dict, Any
 
+from tqdm import tqdm
+
 from PIL import Image, ExifTags
 
 from utils import rating_of_image, safe
@@ -29,25 +31,49 @@ def read_metadata(path: str) -> Dict[str, Any]:
     return data
 
 
+def _write_metadata(path: str, out_dir: str) -> None:
+    """Extract metadata for *path* and save it into *out_dir* grouped by rating."""
+    try:
+        rating = rating_of_image(path)
+    except Exception:
+        rating = "general"
+    meta = read_metadata(path)
+    base = os.path.splitext(os.path.basename(path))[0]
+    dst_dir = os.path.join(out_dir, safe(rating))
+    os.makedirs(dst_dir, exist_ok=True)
+    base_safe = safe(base)
+    dst = os.path.join(dst_dir, base_safe + ".json")
+    if os.path.exists(dst):
+        i = 1
+        while True:
+            alt = os.path.join(dst_dir, f"{base_safe} ({i}).json")
+            if not os.path.exists(alt):
+                dst = alt
+                break
+            i += 1
+    with open(dst, "w", encoding="utf-8") as f:
+        json.dump(meta, f, indent=2, ensure_ascii=False)
+
+
 def process(folder: str, out_dir: str) -> None:
     """Walk *folder* and save metadata to *out_dir* grouped by rating."""
     classes = ["general", "sensitive", "questionable", "explicit"]
     for cls in classes:
         os.makedirs(os.path.join(out_dir, safe(cls)), exist_ok=True)
 
+    paths = []
     for root, _, files in os.walk(folder):
         for name in files:
             if os.path.splitext(name)[1].lower() == ".png":
-                path = os.path.join(root, name)
-                try:
-                    rating = rating_of_image(path)
-                except Exception:
-                    rating = "general"
-                meta = read_metadata(path)
-                base = os.path.splitext(os.path.basename(path))[0]
-                dst = os.path.join(out_dir, safe(rating), safe(base) + ".json")
-                with open(dst, "w", encoding="utf-8") as f:
-                    json.dump(meta, f, indent=2, ensure_ascii=False)
+                paths.append(os.path.join(root, name))
+
+    for path in tqdm(paths, desc="Extracting metadata"):
+        _write_metadata(path, out_dir)
+
+
+def process_single(path: str, out_dir: str) -> None:
+    """Process a single *path* and save metadata into *out_dir*."""
+    _write_metadata(path, out_dir)
 
 
 def main() -> None:

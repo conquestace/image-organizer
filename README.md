@@ -41,7 +41,7 @@ The image organization script scans a specified source folder for images and mov
 To run this script, you'll need the following Python libraries:
 
 ```bash
-pip install pillow exifread tqdm
+pip install pillow exifread
 ```
 
 ## Configuration

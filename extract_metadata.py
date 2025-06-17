@@ -76,6 +76,7 @@ def process_single(path: str, out_dir: str) -> None:
     _write_metadata(path, out_dir)
 
 
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("folder", help="Folder containing PNG images")

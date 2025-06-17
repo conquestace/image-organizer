@@ -28,6 +28,7 @@ The image organization script scans a specified source folder for images and mov
   - `python extract_metadata.py /path/to/images /path/to/output`
   - Use `--no-progress` to disable the progress bar.
 
+
 ### Web Metadata Page
 
 - Use the `/metadata/` page in the web interface to run the extraction

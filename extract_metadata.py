@@ -6,6 +6,7 @@ import json
 import os
 from typing import Dict, Any, Iterable
 
+
 from PIL import Image, ExifTags
 
 from utils import rating_of_image, safe
@@ -27,7 +28,6 @@ def print_progress(index: int, total: int) -> None:
     bar = "#" * filled + "-" * (bar_len - filled)
     print(f"\r[{bar}] {index}/{total}", end="", flush=True)
 
-
 def read_metadata(path: str) -> Dict[str, Any]:
     """Return all metadata found in *path* as a dictionary."""
     data = {}
@@ -47,6 +47,7 @@ def read_metadata(path: str) -> Dict[str, Any]:
 
 
 def process(folder: str, out_dir: str, *, progress: bool = False) -> None:
+
     """Walk *folder* and save metadata to *out_dir* grouped by rating."""
     classes = ["general", "sensitive", "questionable", "explicit"]
     for cls in classes:
@@ -70,6 +71,7 @@ def process(folder: str, out_dir: str, *, progress: bool = False) -> None:
         print()
 
 
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("folder", help="Folder containing PNG images")
@@ -77,6 +79,7 @@ def main() -> None:
     p.add_argument("--no-progress", action="store_true", help="Hide the progress bar")
     args = p.parse_args()
     process(args.folder, args.out, progress=not args.no_progress)
+
 
 
 if __name__ == "__main__":

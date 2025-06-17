@@ -45,24 +45,27 @@ def process(folder: str, out_dir: str) -> None:
 
     for path in tqdm(paths, desc="Extracting metadata"):
         try:
-            rating = rating_of_image(path)
-        except Exception:
-            rating = "general"
-        meta = read_metadata(path)
-        base = os.path.splitext(os.path.basename(path))[0]
-        dst_dir = os.path.join(out_dir, safe(rating))
-        base_safe = safe(base)
-        dst = os.path.join(dst_dir, base_safe + ".json")
-        if os.path.exists(dst):
-            i = 1
-            while True:
-                alt = os.path.join(dst_dir, f"{base_safe} ({i}).json")
-                if not os.path.exists(alt):
-                    dst = alt
-                    break
-                i += 1
-        with open(dst, "w", encoding="utf-8") as f:
-            json.dump(meta, f, indent=2, ensure_ascii=False)
+            try:
+                rating = rating_of_image(path)
+            except Exception:
+                rating = "general"
+            meta = read_metadata(path)
+            base = os.path.splitext(os.path.basename(path))[0]
+            dst_dir = os.path.join(out_dir, safe(rating))
+            base_safe = safe(base)
+            dst = os.path.join(dst_dir, base_safe + ".json")
+            if os.path.exists(dst):
+                i = 1
+                while True:
+                    alt = os.path.join(dst_dir, f"{base_safe} ({i}).json")
+                    if not os.path.exists(alt):
+                        dst = alt
+                        break
+                    i += 1
+            with open(dst, "w", encoding="utf-8") as f:
+                json.dump(meta, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Skipping {path}: {e}")
 
 
 def main() -> None:

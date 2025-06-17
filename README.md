@@ -17,6 +17,21 @@ The image organization script scans a specified source folder for images and mov
 - **Keywords**: 
   - You can customize the list of keywords to categorize images. Currently, the script includes a placeholder for a keyword ("cirno").
 
+### extract_metadata.py
+
+- **Functionality**:
+  - Recursively scans a folder for PNG files.
+  - Extracts all available metadata from each image.
+  - Saves the metadata to JSON files under a destination directory organised by rating (`general`, `sensitive`, `questionable`, `explicit`).
+- **Usage**:
+  - `python extract_metadata.py /path/to/images /path/to/output`
+
+### Web Metadata Page
+
+- Use the `/metadata/` page in the web interface to run the extraction
+  without the command line. Provide a source folder and destination directory,
+  then click **Extract** to save JSON files grouped by rating.
+
 ### Metadata Extraction
 
 - The script is capable of extracting the "prompts" metadata field from image files using the `exifread` library. This metadata can then be used to categorize images if no specific keyword match occurs.

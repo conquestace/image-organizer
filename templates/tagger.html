@@ -23,7 +23,10 @@
 <body>
 
 <h1>🏷️ WD-Tagger Organiser</h1>
-<p><a href="{{ url_for('prompt.prompt_page') }}">Switch to Prompt Organiser</a></p>
+<p>
+  <a href="{{ url_for('home') }}">Home</a> |
+  <a href="{{ url_for('prompt.prompt_page') }}">Switch to Prompt Organiser</a>
+</p>
 
 <form method="POST">
   <input type="text" name="folder" placeholder="Full path to image folder" value="{{ folder }}"><br>
